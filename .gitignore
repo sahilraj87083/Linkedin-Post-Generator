@@ -1,3 +1,5 @@
 .idea/
 LinkP/
 .env
+
+ __pycache__/

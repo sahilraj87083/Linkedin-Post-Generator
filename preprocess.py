@@ -1,5 +1,5 @@
 import  json
-# import  re
+import  re
 from http.client import responses
 from itertools import chain
 from tempfile import template
@@ -13,7 +13,7 @@ from llm_helper import llm
 
 
 def process_post(raw_file_path , processed_file_path = "data/processed_posts.json"):
-    with open(raw_file_path , encoding= 'utf-8') as file :
+    with open(raw_file_path , encoding= 'utf-8', errors="ignore") as file :
         posts = json.load(file)
         enriched_posts = []
         for post in posts:
@@ -28,12 +28,12 @@ def process_post(raw_file_path , processed_file_path = "data/processed_posts.jso
         for en_post in enriched_posts:
                 print(en_post)
 
-# def clean_text(text):
-#     # Remove invalid surrogates
-#     return text.encode("utf-8", "ignore").decode("utf-8", "ignore")
+def clean_text(text):
+    # Remove invalid surrogates
+    return text.encode("utf-8", "ignore").decode("utf-8", "ignore")
 
 def extract_metadata(post):
-    # post = clean_text(post) # sanitize before using in template
+    post = clean_text(post) # sanitize before using in template
     template = f'''
     You are given a LinkedIn Post. You need to extract number of lines, language of the post and tags.
     1. Return a valid JSON. No preamble
