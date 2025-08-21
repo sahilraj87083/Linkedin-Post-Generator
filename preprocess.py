@@ -1,4 +1,16 @@
 import  json
+# import  re
+from http.client import responses
+from itertools import chain
+from tempfile import template
+
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.exceptions import OutputParserException
+
+from llm_helper import llm
+
+
 
 def process_post(raw_file_path , processed_file_path = "data/processed_posts.json"):
     with open(raw_file_path , encoding= 'utf-8') as file :
@@ -7,22 +19,46 @@ def process_post(raw_file_path , processed_file_path = "data/processed_posts.jso
         for post in posts:
             metadata = extract_metadata(post['text'])
 
-            post_with_matadata = post | metadata
+            post_with_metadata = post | metadata
             # | is a pipe operator that basically combines the content of metadata and the post
 
-            enriched_posts.append(post_with_matadata)
+            enriched_posts.append(post_with_metadata)
 
 
         for en_post in enriched_posts:
                 print(en_post)
 
+# def clean_text(text):
+#     # Remove invalid surrogates
+#     return text.encode("utf-8", "ignore").decode("utf-8", "ignore")
 
 def extract_metadata(post):
-    return {
-        'Line Count' : 10,
-        'Language' : 'English',
-        'tags' : ['Mental Health' , 'Motivation']
-    }
+    # post = clean_text(post) # sanitize before using in template
+    template = f'''
+    You are given a LinkedIn Post. You need to extract number of lines, language of the post and tags.
+    1. Return a valid JSON. No preamble
+    2. JSON object should have exactly three keys : line_count, language and tags
+    3. tags is an array of text tags. Extract maximum two tags.
+    4. Language should be English or Hinglish (Hinglish means hindi + English)
+    
+    Here is the actual post on which you need to perform this task:
+    {post}
+    '''
+
+    pt = PromptTemplate.from_template(template)
+    chain = pt | llm
+
+    #  below post inside single quotes corresponds to the post mentioned inside the template and then the "post" which is function argument is passed as an input to it.
+
+    response = chain.invoke(input={'post' : post})
+    try :
+        json_parser = JsonOutputParser()
+
+        final_response = json_parser.parse(response.content)
+    except OutputParserException:
+        raise OutputParserException("Context Too big. Unable to parse jobs.")
+    return final_response
+
 
 if __name__ == "__main__":
     process_post("data/raw_posts.json" , "data/processed_posts.json")
