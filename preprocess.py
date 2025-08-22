@@ -1,5 +1,5 @@
-import  json
-import  re
+import json
+import re
 from http.client import responses
 from itertools import chain
 from tempfile import template
@@ -11,9 +11,8 @@ from langchain_core.exceptions import OutputParserException
 from llm_helper import llm
 
 
-
-def process_post(raw_file_path , processed_file_path = "data/processed_posts.json"):
-    with open(raw_file_path , encoding= 'utf-8', errors="ignore") as file :
+def process_post(raw_file_path, processed_file_path="data/processed_posts.json"):
+    with open(raw_file_path, encoding='utf-8', errors="ignore") as file:
         posts = json.load(file)
         enriched_posts = []
         for post in posts:
@@ -24,14 +23,13 @@ def process_post(raw_file_path , processed_file_path = "data/processed_posts.jso
 
             enriched_posts.append(post_with_metadata)
 
-
     unified_tags = get_unified_tags(enriched_posts)
     for post in enriched_posts:
         current_tags = post['tags']
         new_tags = {unified_tags[tag] for tag in current_tags}
         post['tags'] = list(new_tags)
 
-    with open(processed_file_path, encoding='utf-8', mode="w") as outfile :
+    with open(processed_file_path, encoding='utf-8', mode="w") as outfile:
         json.dump(enriched_posts, outfile, indent=4)
 
 
@@ -53,13 +51,12 @@ def get_unified_tags(post_with_metadata):
     3. Output should be JSON object, no preamble.
     4. Output should have mapping of original tags and the unified tags.
         For example : {{"Jobseekers" : "Job Search", "Job Hunting" : "Job Search", "Motivation" : "Motivation"}}
-        
+
     Here is the list of tags
     {tags}
     '''
     pt = PromptTemplate.from_template(template)
     chain = pt | llm
-
 
     response = chain.invoke(input={'tags': str(unique_tags_list)})
     try:
@@ -75,15 +72,16 @@ def clean_text(text):
     # Remove invalid surrogates
     return text.encode("utf-8", "ignore").decode("utf-8", "ignore")
 
+
 def extract_metadata(post):
-    post = clean_text(post) # sanitize before using in template
+    post = clean_text(post)  # sanitize before using in template
     template = '''
     You are given a LinkedIn Post. You need to extract number of lines, language of the post and tags.
     1. Return a valid JSON. No preamble
     2. JSON object should have exactly three keys : line_count, language and tags
     3. tags is an array of text tags. Extract maximum two tags.
     4. Language should be English or Hinglish (Hinglish means hindi + English)
-    
+
     Here is the actual post on which you need to perform this task:
     {post}
     '''
@@ -93,8 +91,8 @@ def extract_metadata(post):
 
     #  below post inside single quotes corresponds to the post mentioned inside the template and then the "post" which is function argument is passed as an input to it.
 
-    response = chain.invoke(input={'post' : post})
-    try :
+    response = chain.invoke(input={'post': post})
+    try:
         json_parser = JsonOutputParser()
 
         final_response = json_parser.parse(response.content)
@@ -104,4 +102,4 @@ def extract_metadata(post):
 
 
 if __name__ == "__main__":
-    process_post("data/raw_posts.json" , "data/processed_posts.json")
+    process_post("data/raw_posts.json", "data/processed_posts.json")
