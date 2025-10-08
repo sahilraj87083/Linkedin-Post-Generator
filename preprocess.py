@@ -70,7 +70,7 @@ def get_unified_tags(post_with_metadata):
 
 def clean_text(text):
     # Remove invalid surrogates
-    return text.encode("utf-8", "ignore").decode("utf-8", "ignore")
+    return text.encode("utf-8", "surrogatepass").decode("utf-8", "ignore")
 
 
 def extract_metadata(post):
